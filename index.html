@@ -39,7 +39,7 @@
                 <span>🔔</span> <span>Alertas</span>
             </a>
             <a href="#" class="flex items-center space-x-3 text-gray-400 hover:bg-gray-800 hover:text-white px-4 py-2.5 rounded-xl transition">
-                <span>👥</span> <span>Beneficiarios</span>
+                <span>👥</span> <span>Usuarios</span>
             </a>
             <a href="#" class="flex items-center space-x-3 text-gray-400 hover:bg-gray-800 hover:text-white px-4 py-2.5 rounded-xl transition">
                 <span>⚙️</span> <span>Configuración</span>
@@ -119,18 +119,15 @@
                 <input type="text" id="buscador" placeholder="Buscar municipio, estado..." class="w-full pl-10 pr-4 py-2.5 bg-[#0b0f19] border border-gray-800 rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
             </div>
             <div class="flex gap-3">
-                <select id="filtro-estado" class="px-3 py-2.5 bg-[#0b0f19] border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                    <option value="">Todos los estados</option>
-                    <option value="Hgo.">Hidalgo</option>
-                    <option value="Pue.">Puebla</option>
-                    <option value="Ver.">Veracruz</option>
-                </select>
-                <select id="filtro-nivel" class="px-3 py-2.5 bg-[#0b0f19] border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
-                    <option value="">Todos los niveles</option>
-                    <option value="Peligro">Peligro / Alerta</option>
-                    <option value="Precaución">Precaución</option>
-                    <option value="Estable">Sin riesgo</option>
-                </select>
+                <button onclick="enviarReporteAdministradores()" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                    📊 Reporte a Admins
+                </button>
+                <button onclick="ejecutarMonitoreoClima()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                    🔄 Sincronizar Clima
+                </button>
+                <button onclick="abrirModal()" class="bg-[#1e293b] hover:bg-gray-700 border border-gray-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                    👤 Nuevo Usuario
+                </button>
             </div>
         </section>
 
@@ -372,9 +369,9 @@
                 if (ll.val >= 50.0) {
                     maximaAlerta = 'Peligro';
                     if (ll.val >= 150.0) {
-                        alertas.push(`🚨 <span class="font-bold text-red-500">${ll.dia}</span>: ¡TORMENTA TORRENCIAL! (${ll.val}mm). Alto peligro de desborde y deslaves.`);
+                        alertas.push(`🚨 <span class="font-bold text-red-600">${ll.dia}</span>: ¡PELIGRO EXTREMO DE TORMENTA! (${ll.val}mm). Riesgo alto de inundación grave y deslaves.`);
                     } else {
-                        alertas.push(`⚠️ <span class="font-bold text-orange-400">${ll.dia}</span>: ¡LLUVIA MUY FUERTE! (${ll.val}mm). Riesgo de desgajamiento de lomas.`);
+                        alertas.push(`⚠️ <span class="font-bold text-orange-600">${ll.dia}</span>: ¡LLUVIA MUY FUERTE! (${ll.val}mm). Riesgo de desgajamiento de lomas.`);
                     }
                 }
                 // Nivel 2: Fusión Bochorno
@@ -672,6 +669,27 @@
             } finally {
                 btn.disabled = false;
                 btn.innerText = "🔄 Sincronizar Clima";
+            }
+        }
+
+        // Enviar el Reporte On Demand a los Administradores
+        async function enviarReporteAdministradores() {
+            const btn = document.querySelector('button[onclick="enviarReporteAdministradores()"]');
+            btn.disabled = true;
+            btn.innerText = "⏳ Enviando...";
+            
+            try {
+                // Llamamos a la función de reporte en la base de datos
+                const { data, error } = await _supabase.rpc('generar_reporte_administradores');
+                if (error) throw error;
+                
+                alert("¡Reporte Enviado!\n" + data);
+                await cargarPanel();
+            } catch (err) {
+                alert("Error al enviar reporte: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "📊 Reporte a Admins";
             }
         }
 
