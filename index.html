@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Alerta Meteorológica - ONG</title>
+    <!-- Cargamos Tailwind CSS para un diseño moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Cargamos la librería oficial de Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-gray-100 font-sans text-gray-800 min-h-screen">
+
+    <!-- BARRA DE NAVEGACIÓN -->
+    <nav class="bg-slate-800 text-white shadow-md p-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <span class="text-2xl">📡</span>
+                <h1 class="text-xl font-bold tracking-tight">Sistema de Alerta Temprana - ONG</h1>
+            </div>
+            <span class="bg-green-500 text-xs text-white font-semibold px-2.5 py-1 rounded-full animate-pulse">📡 Cerebro de Clima Activo</span>
+        </div>
+    </nav>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <main class="max-w-7xl mx-auto p-4 lg:p-8 space-y-6">
+
+        <!-- TARJETAS DE MÉTRICAS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold uppercase">Cobertura Territorial</p>
+                    <h3 class="text-3xl font-bold text-gray-800" id="total-municipios">0</h3>
+                </div>
+                <span class="text-4xl">🗺️</span>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold uppercase">Población Protegida (Celulares)</p>
+                    <h3 class="text-3xl font-bold text-gray-800" id="total-usuarios">0</h3>
+                </div>
+                <span class="text-4xl">👥</span>
+            </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500 font-semibold uppercase">Historial de Alertas Generadas</p>
+                    <h3 class="text-3xl font-bold text-gray-800" id="total-alertas">0</h3>
+                </div>
+                <span class="text-4xl">📩</span>
+            </div>
+        </div>
+
+        <!-- BARRA DE ACCIONES -->
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="relative flex-1">
+                <input type="text" id="buscador" placeholder="🔎 Buscar municipio (ej. Tenango)..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+            </div>
+            <div class="flex gap-3">
+                <button onclick="ejecutarMonitoreoClima()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                    🔄 Sincronizar Clima
+                </button>
+                <button onclick="abrirModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
+                    ➕ Registrar Usuario
+                </button>
+            </div>
+        </div>
+
+        <!-- TABLA DE MUNICIPIOS Y PRONÓSTICOS -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
+                        <tr>
+                            <th class="p-4 w-[20%]">Municipio / Estado</th>
+                            <th class="p-4 w-[35%]">Resumen de Alerta / Interpretación Sencilla</th>
+                            <th class="p-4 text-center w-[22%]">Perspectiva Lluvia (Pronóstico 5 Días)</th>
+                            <th class="p-4 text-center w-[23%]">Perspectiva Temperatura (Pronóstico 5 Días)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-cuerpo" class="divide-y divide-gray-100 text-sm">
+                        <!-- Las filas se cargarán automáticamente aquí -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL DE REGISTRO DE USUARIOS -->
+    <div id="modal-registro" class="fixed inset-0 bg-slate-900/50 hidden flex items-center justify-center p-4 backdrop-blur-sm z-50">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-gray-100">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-lg font-bold text-gray-800">Registrar Nuevo Beneficiario</h3>
+                <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+            </div>
+            <form onsubmit="registrarUsuario(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Celular de Pruebas (Formato +52)</label>
+                    <input type="text" id="reg-telefono" placeholder="+525512345678" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Código Postal</label>
+                    <input type="text" id="reg-cp" placeholder="42130" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Municipio de Residencia</label>
+                    <select id="reg-municipio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                        <option value="">Seleccione un municipio...</option>
+                        <!-- Se poblará dinámicamente -->
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3 pt-4">
+                    <button type="button" onclick="cerrarModal()" class="px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CÓDIGO DE CONEXIÓN CON SUPABASE -->
+    <script>
+        // CONFIGURACIÓN DE CONEXIÓN
+        const supabaseUrl = 'https://mkydiuqermwusndsibqg.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1reWRpdXFlcm13dXNuZHNpYnFnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMzIwNjcsImV4cCI6MjA5NDgwODA2N30.m3tE-X7YUi9mMLDCSngDUXKpriyWHN6MihFJHtdCA_I';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+        let municipios_locales = [];
+
+        // Municipios cálidos de la Sierra/Huasteca (Límites de calor elevados)
+        const municipiosCalidos = ['13027', '13053', '13060', '21213', '21197', '21091', '21071', '21175', '21100', '21049', '21184', '21181', '21109'];
+
+        // Genera el nombre de los 5 días en español
+        function obtenerNombresDias() {
+            const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const hoy = new Date();
+            const nombres = [];
+            for (let i = 0; i < 5; i++) {
+                const f = new Date(hoy);
+                f.setDate(hoy.getDate() + i);
+                const diaNombre = i === 0 ? 'Hoy' : diasSemana[f.getDay()];
+                const diaNum = f.getDate();
+                nombres.push(`${diaNombre} ${diaNum}`);
+            }
+            return nombres;
+        }
+
+        // Función para cargar los datos del panel al iniciar
+        async function cargarPanel() {
+            try {
+                const { data: municipios, error: errM } = await _supabase
+                    .from('municipios_riesgo')
+                    .select('*')
+                    .order('municipio', { ascending: true });
+
+                if (errM) throw errM;
+                municipios_locales = municipios;
+
+                const { count: usuariosCount, error: errU } = await _supabase
+                    .from('usuarios')
+                    .select('*', { count: 'exact', head: true });
+
+                const { count: alertasCount, error: errA } = await _supabase
+                    .from('cola_sms')
+                    .select('*', { count: 'exact', head: true });
+
+                document.getElementById('total-municipios').innerText = municipios.length;
+                document.getElementById('total-usuarios').innerText = usuariosCount || 0;
+                document.getElementById('total-alertas').innerText = alertasCount || 0;
+
+                dibujarTabla(municipios);
+                poblarSelectMunicipios(municipios);
+
+            } catch (err) {
+                alert("Error al conectar con la Base de Datos: " + err.message);
+            }
+        }
+
+        // ANALISTA INTELIGENTE: ÁRBOL DE DECISIÓN DE 3 NIVELES (CDMX/SMN)
+        function generarResumenAlerta(item) {
+            if (!item.outlook_lluvia_5d || item.outlook_lluvia_5d.includes('Esperando')) {
+                return '<span class="text-gray-400 italic text-xs">Esperando sincronización de clima...</span>';
+            }
+
+            const nombresDias = obtenerNombresDias();
+            const esCalido = municipiosCalidos.includes(item.clave_inegi);
+            
+            const lluvias = item.outlook_lluvia_5d.split(', ').map((d, idx) => ({
+                dia: nombresDias[idx],
+                val: parseFloat(d.split(': ')[1])
+            }));
+            
+            const temps = item.outlook_temp_5d.split(', ').map((d, idx) => {
+                const rango = d.split(': ')[1].replace('C', '').split('/');
+                return {
+                    dia: nombresDias[idx],
+                    tmin: parseFloat(rango[0]),
+                    tmax: parseFloat(rango[1])
+                };
+            });
+
+            let alertas = [];
+
+            // Evaluamos día por día bajo el árbol de decisión
+            for (let i = 0; i < 5; i++) {
+                const ll = lluvias[i];
+                const t = temps[i];
+                
+                // Límites de calor según región
+                const limiteCalorAmarillo = esCalido ? 34.0 : 28.0;
+                const limiteCalorNaranja = esCalido ? 37.0 : 31.0;
+
+                // NIVEL 1 DEL ÁRBOL: PRIORIDAD LLUVIA SEVERA (>= 50mm) -> Bloquea advertencias de calor
+                if (ll.val >= 50.0) {
+                    if (ll.val >= 150.0) {
+                        alertas.push(`🚨 <span class="font-bold text-red-600">${ll.dia}</span>: ¡PELIGRO EXTREMO DE TORMENTA! (${ll.val}mm). Riesgo alto de inundación grave y deslaves.`);
+                    } else {
+                        alertas.push(`⚠️ <span class="font-bold text-orange-600">${ll.dia}</span>: ¡LLUVIA MUY FUERTE! (${ll.val}mm). Peligro de deslave y caída de tierra en cerros.`);
+                    }
+                }
+                // NIVEL 2 DEL ÁRBOL: FUSIÓN DE COEXISTENCIA ("BOCHORNO") (Lluvia 25-50mm Y Calor alto)
+                else if (ll.val >= 25.1 && t.tmax >= limiteCalorAmarillo) {
+                    alertas.push(`⚠️ <span class="font-bold text-yellow-600">${ll.dia}</span>: Ambiente muy sofocante (bochorno de ${t.tmax}°C) con lluvia fuerte (${ll.val}mm). Camine con cuidado.`);
+                }
+                // NIVEL 3 DEL ÁRBOL: EVALUACIÓN INDEPENDIENTE
+                else {
+                    // Lluvia Fuerte sola
+                    if (ll.val >= 25.1) {
+                        alertas.push(`⚠️ <span class="font-bold text-yellow-600">${ll.dia}</span>: Habrá mucha agua en las calles (${ll.val}mm). No cruce arroyos ni calles inundadas.`);
+                    }
+                    
+                    // Calor solo
+                    if (t.tmax >= limiteCalorAmarillo) {
+                        if (t.tmax >= (esCalido ? 40.0 : 34.0)) {
+                            alertas.push(`🔥 <span class="font-bold text-red-600">${t.dia}</span>: HARÁ MUCHÍSIMO CALOR (${t.tmax}°C). Tome mucha agua y no se asolee.`);
+                        } else if (t.tmax >= limiteCalorNaranja) {
+                            alertas.push(`🔥 <span class="font-bold text-orange-600">${t.dia}</span>: Tarde con mucho calor (${t.tmax}°C). Protéjase del sol.`);
+                        } else {
+                            alertas.push(`🔥 <span class="font-bold text-yellow-600">${t.dia}</span>: Tarde muy calurosa (${t.tmax}°C). Recuerde tomar agua.`);
+                        }
+                    }
+
+                    // Frío solo
+                    if (t.tmin <= 6.0) {
+                        if (t.tmin <= -3.0) {
+                            alertas.push(`❄️ <span class="font-bold text-purple-600">${t.dia}</span>: HELADA MUY PELIGROSA (${t.tmin}°C).`);
+                        } else if (t.tmin <= 0.0) {
+                            alertas.push(`❄️ <span class="font-bold text-red-600">${t.dia}</span>: Helada severa (${t.tmin}°C). Protéjase bien.`);
+                        } else if (t.tmin <= 3.0) {
+                            alertas.push(`❄️ <span class="font-bold text-orange-600">${t.dia}</span>: Hará muchísimo frío (${t.tmin}°C). Póngase ropa gruesa.`);
+                        } else {
+                            alertas.push(`❄️ <span class="font-bold text-yellow-600">${t.dia}</span>: Frío de precaución (${t.tmin}°C). Abríguese.`);
+                        }
+                    }
+                }
+            }
+
+            if (alertas.length === 0) {
+                return '<span class="text-green-600 font-semibold flex items-center gap-1">✅ Pronóstico estable y seguro. Sin riesgos para los próximos 5 días.</span>';
+            }
+
+            return `<div class="space-y-1 text-xs text-left">${alertas.map(a => `<div class="border-l-2 border-slate-300 pl-2 py-0.5">${a}</div>`).join('')}</div>`;
+        }
+
+        // PARSER DE LLUVIA CON SEMÁFORO HOMOLOGADO AL SMN
+        function generarSemaforoLluvia(str) {
+            if (!str || str.includes('Esperando')) return '<span class="text-gray-400 italic text-xs">Esperando lectura...</span>';
+            
+            const dias = str.split(', ');
+            const nombresDias = obtenerNombresDias();
+            let html = '<div class="flex justify-center space-x-2">';
+            
+            dias.forEach((d, idx) => {
+                const partes = d.split(': ');
+                const diaEtiqueta = nombresDias[idx] || partes[0];
+                const valorLluvia = parseFloat(partes[1]);
+                
+                let colorClase = 'bg-green-100 text-green-800 border-green-300'; // Lluvia Ligera (0 - 25mm)
+                
+                if (valorLluvia >= 150.1) {
+                    colorClase = 'bg-red-500 text-white border-red-600 animate-pulse'; // Lluvia muy intensa (Severa/Torrencial)
+                } else if (valorLluvia >= 50.1) {
+                    colorClase = 'bg-orange-100 text-orange-800 border-orange-300 font-bold'; // Lluvia Intensa (Alerta)
+                } else if (valorLluvia >= 25.1) {
+                    colorClase = 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Lluvia Fuerte (Precaución)
+                }
+
+                html += `
+                    <div class="flex flex-col items-center border rounded px-1.5 py-1 ${colorClase} text-[10px] font-bold min-w-[58px] shadow-sm">
+                        <span>${diaEtiqueta}</span>
+                        <span class="text-[11px] mt-0.5">${valorLluvia}mm</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // PARSER DE TEMPERATURA CON SEMÁFORO HOMOLOGADO REGIONALIZADO
+        function generarSemaforoTemperatura(str, claveInegi) {
+            if (!str || str.includes('Esperando')) return '<span class="text-gray-400 italic text-xs">Esperando lectura...</span>';
+            
+            const dias = str.split(', ');
+            const nombresDias = obtenerNombresDias();
+            const esCalido = municipiosCalidos.includes(claveInegi);
+            let html = '<div class="flex justify-center space-x-2">';
+            
+            dias.forEach((d, idx) => {
+                const partes = d.split(': ');
+                const diaEtiqueta = nombresDias[idx] || partes[0];
+                const rangoTemp = partes[1].replace('C', '');
+                const temps = rangoTemp.split('/');
+                const tmin = parseFloat(temps[0]);
+                const tmax = parseFloat(temps[1]);
+                
+                let colorClase = 'bg-gray-50 text-gray-600 border-gray-200'; // Templado Seguro
+                
+                // Límites de calor según región
+                const limiteCalorAmarillo = esCalido ? 34.0 : 28.0;
+                const limiteCalorNaranja = esCalido ? 37.0 : 31.0;
+                const limiteCalorRojo = esCalido ? 40.0 : 34.0;
+
+                // 1. Evaluación de Frío (Gaceta Oficial)
+                if (tmin <= -3.0) {
+                    colorClase = 'bg-purple-600 text-white border-purple-700 animate-pulse'; // Púrpura: Menor a -3°C
+                } else if (tmin <= 0.0) {
+                    colorClase = 'bg-red-500 text-white border-red-600'; // Roja: -1°C a 0°C
+                } else if (tmin <= 3.0) {
+                    colorClase = 'bg-orange-100 text-orange-800 border-orange-300'; // Naranja: 1°C a 3°C
+                } else if (tmin <= 6.0) {
+                    colorClase = 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Amarilla: 4°C a 6°C
+                }
+                
+                // 2. Evaluación de Calor Regionalizado
+                if (tmax >= limiteCalorRojo) {
+                    colorClase = 'bg-red-500 text-white border-red-600 animate-pulse'; // Roja (Muy Alto)
+                } else if (tmax >= limiteCalorNaranja && colorClase.includes('gray')) {
+                    colorClase = 'bg-orange-100 text-orange-800 border-orange-300'; // Naranja (Alto)
+                } else if (tmax >= limiteCalorAmarillo && colorClase.includes('gray')) {
+                    colorClase = 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Amarilla (Moderado)
+                }
+
+                html += `
+                    <div class="flex flex-col items-center border rounded px-1.5 py-1 ${colorClase} text-[10px] font-bold min-w-[68px] shadow-sm">
+                        <span>${diaEtiqueta}</span>
+                        <span class="text-[11px] mt-0.5">${tmin}/${tmax}°C</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            return html;
+        }
+
+        // Función para dibujar la tabla de municipios
+        function dibujarTabla(lista) {
+            const tbody = document.getElementById('tabla-cuerpo');
+            tbody.innerHTML = '';
+
+            lista.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 transition border-b border-gray-100";
+
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <div class="font-bold text-gray-800">${item.municipio}</div>
+                        <div class="text-xs text-gray-400 font-semibold">${item.estado}</div>
+                    </td>
+                    <td class="p-4">${generarResumenAlerta(item)}</td>
+                    <td class="p-4 text-center">${generarSemaforoLluvia(item.outlook_lluvia_5d)}</td>
+                    <td class="p-4 text-center">${generarSemaforoTemperatura(item.outlook_temp_5d, item.clave_inegi)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Poblar el dropdown de municipios del modal de registro
+        function poblarSelectMunicipios(lista) {
+            const select = document.getElementById('reg-municipio');
+            select.innerHTML = '<option value="">Seleccione un municipio...</option>';
+            lista.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.clave_inegi;
+                opt.innerText = `${item.municipio} (${item.estado})`;
+                select.appendChild(opt);
+            });
+        }
+
+        // Buscador reactivo
+        document.getElementById('buscador').addEventListener('input', (e) => {
+            const termino = e.target.value.toLowerCase();
+            const filtrados = municipios_locales.filter(item => 
+                item.municipio.toLowerCase().includes(termino) || 
+                item.estado.toLowerCase().includes(termino)
+            );
+            dibujarTabla(filtrados);
+        });
+
+        // Forzar la consulta del Clima mediante botón
+        async function ejecutarMonitoreoClima() {
+            const btn = document.querySelector('button[onclick="ejecutarMonitoreoClima()"]');
+            btn.disabled = true;
+            btn.innerText = "⏳ Sincronizando...";
+            
+            try {
+                const { data, error } = await _supabase.rpc('monitorear_clima_y_alertar');
+                if (error) throw error;
+                
+                alert("¡Sincronización Completada!\n" + data);
+                await cargarPanel();
+            } catch (err) {
+                alert("Error al monitorear: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🔄 Sincronizar Clima";
+            }
+        }
+
+        // Registrar un nuevo usuario desde la web
+        async function registrarUsuario(event) {
+            event.preventDefault();
+            const tel = document.getElementById('reg-telefono').value;
+            const cp = document.getElementById('reg-cp').value;
+            const inegi = document.getElementById('reg-municipio').value;
+
+            try {
+                const { data, error } = await _supabase
+                    .from('usuarios')
+                    .insert([{ telefono: tel, codigo_postal: cp, clave_inegi_municipio: inegi }]);
+
+                if (error) throw error;
+
+                alert("¡Beneficiario registrado exitosamente en la base de datos!");
+                cerrarModal();
+                await cargarPanel();
+            } catch (err) {
+                alert("Error al registrar: " + err.message);
+            }
+        }
+
+        // Lógica de apertura/cierre de modal
+        function abrirModal() { document.getElementById('modal-registro').classList.remove('hidden'); }
+        function cerrarModal() { document.getElementById('modal-registro').classList.add('hidden'); }
+
+        // Inicializar el panel al cargar la página
+        window.onload = cargarPanel;
+    </script>
+</body>
+</html>
