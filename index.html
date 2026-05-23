@@ -4,120 +4,266 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SIMA - Pastoral Social Diócesis de Tulancingo</title>
-    <!-- Cargamos Tailwind CSS para un diseño moderno -->
+    <!-- Cargamos Tailwind CSS para diseño moderno -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Cargamos la librería oficial de Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Estilos personalizados para scrollbars finas y scroll fluido */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0b0f19; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+    </style>
 </head>
-<body class="bg-gray-100 font-sans text-gray-800 min-h-screen">
+<body class="bg-[#0b0f19] text-gray-100 font-sans min-h-screen flex flex-col lg:flex-row overflow-x-hidden pb-16 lg:pb-0">
 
-    <!-- BARRA DE NAVEGACIÓN -->
-    <nav class="bg-slate-800 text-white shadow-md p-4">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <span class="text-2xl">📡</span>
-                <h1 class="text-xl font-bold tracking-tight">SIMA: Sistema Inteligente de Monitoreo y Alerta - Diócesis de Tulancingo 🇲🇽</h1>
+    <!-- 1. BARRA LATERAL DE NAVEGACIÓN (ESCRITORIO) -->
+    <aside class="hidden lg:flex flex-col w-64 bg-[#111827] border-r border-gray-800 p-6 space-y-8 min-h-screen">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl text-blue-500">📡</span>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white leading-none">SIMA</h1>
+                <p class="text-[10px] text-gray-400 font-semibold uppercase mt-1">Pastoral Social</p>
             </div>
-            <span class="bg-green-500 text-xs text-white font-semibold px-2.5 py-1 rounded-full animate-pulse">📡 Cerebro de Clima Activo</span>
         </div>
-    </nav>
+        
+        <nav class="flex-1 space-y-2">
+            <a href="#" class="flex items-center space-x-3 bg-blue-600/10 text-blue-400 font-semibold px-4 py-2.5 rounded-xl border border-blue-500/20">
+                <span>📊</span> <span>Dashboard</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 text-gray-400 hover:bg-gray-800 hover:text-white px-4 py-2.5 rounded-xl transition">
+                <span>🗺️</span> <span>Municipios</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 text-gray-400 hover:bg-gray-800 hover:text-white px-4 py-2.5 rounded-xl transition">
+                <span>🔔</span> <span>Alertas</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 text-gray-400 hover:bg-gray-800 hover:text-white px-4 py-2.5 rounded-xl transition">
+                <span>👥</span> <span>Beneficiarios</span>
+            </a>
+            <a href="#" class="flex items-center space-x-3 text-gray-400 hover:bg-gray-800 hover:text-white px-4 py-2.5 rounded-xl transition">
+                <span>⚙️</span> <span>Configuración</span>
+            </a>
+        </nav>
 
-    <!-- CONTENEDOR PRINCIPAL -->
-    <main class="max-w-7xl mx-auto p-4 lg:p-8 space-y-6">
+        <!-- Estado del sistema operativo -->
+        <div class="bg-[#131b2e] border border-gray-800 p-4 rounded-xl text-xs space-y-1 text-gray-400">
+            <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-green-500"></span>
+                <span class="font-bold text-gray-200">Sistema Operativo</span>
+            </div>
+            <p>Último sync: <span id="sys-sync" class="font-semibold text-gray-300">--:--</span></p>
+            <p>API Clima: <span class="text-green-400 font-semibold">Conectado</span></p>
+            <p>SMS Queue: <span id="sys-sms" class="font-semibold text-gray-300">0 pendientes</span></p>
+        </div>
+    </aside>
+
+    <!-- 2. CONTENEDOR PRINCIPAL DE CONTENIDO -->
+    <main class="flex-1 p-4 lg:p-8 space-y-6 max-w-7xl mx-auto w-full">
+
+        <!-- CABECERA -->
+        <header class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h2 class="text-2xl font-extrabold text-white">Dashboard</h2>
+                <p class="text-sm text-gray-400">Monitoreo climático predictivo en tiempo real</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <button onclick="ejecutarMonitoreoClima()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                    🔄 Sincronizar
+                </button>
+                <button onclick="abrirModal()" class="bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl shadow transition flex items-center gap-2">
+                    👤 Nuevo Usuario
+                </button>
+            </div>
+        </header>
 
         <!-- TARJETAS DE MÉTRICAS -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-[#131b2e] border border-gray-800 p-5 rounded-2xl flex items-center justify-between shadow-sm">
                 <div>
-                    <p class="text-sm text-gray-500 font-semibold uppercase">Cobertura Territorial</p>
-                    <h3 class="text-3xl font-bold text-gray-800" id="total-municipios">0</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Cobertura Territorial</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="total-municipios">--</h3>
+                    <p class="text-[10px] text-green-400 mt-1 font-semibold">▲ Activo <span class="text-gray-500">Sierra & Huasteca</span></p>
                 </div>
-                <span class="text-4xl">🗺️</span>
+                <span class="text-3xl bg-blue-500/10 p-3 rounded-xl">🗺️</span>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+            <div class="bg-[#131b2e] border border-gray-800 p-5 rounded-2xl flex items-center justify-between shadow-sm">
                 <div>
-                    <p class="text-sm text-gray-500 font-semibold uppercase">Población Protegida (Celulares)</p>
-                    <h3 class="text-3xl font-bold text-gray-800" id="total-usuarios">0</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Población Protegida</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="total-usuarios">--</h3>
+                    <p class="text-[10px] text-green-400 mt-1 font-semibold">▲ Creciendo <span class="text-gray-500">SMS Activos</span></p>
                 </div>
-                <span class="text-4xl">👥</span>
+                <span class="text-3xl bg-purple-500/10 p-3 rounded-xl">👥</span>
             </div>
-            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center justify-between">
+            <div class="bg-[#131b2e] border border-gray-800 p-5 rounded-2xl flex items-center justify-between shadow-sm">
                 <div>
-                    <p class="text-sm text-gray-500 font-semibold uppercase">Historial de Alertas Generadas</p>
-                    <h3 class="text-3xl font-bold text-gray-800" id="total-alertas">0</h3>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Alertas Generadas</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="total-alertas">--</h3>
+                    <p class="text-[10px] text-amber-400 mt-1 font-semibold">● Pendientes <span class="text-gray-500">SMS Queue</span></p>
                 </div>
-                <span class="text-4xl">📩</span>
+                <span class="text-3xl bg-amber-500/10 p-3 rounded-xl">🔔</span>
             </div>
-        </div>
+            <div class="bg-[#131b2e] border border-gray-800 p-5 rounded-2xl flex items-center justify-between shadow-sm">
+                <div>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Riesgo Actual</p>
+                    <h3 class="text-2xl font-black text-white mt-1" id="riesgo-actual-index">--</h3>
+                    <p class="text-[10px] text-gray-400 mt-1">Basado en <span class="text-gray-300 font-semibold">5 días pronóstico</span></p>
+                </div>
+                <span class="text-3xl bg-green-500/10 p-3 rounded-xl" id="riesgo-icono">🛡️</span>
+            </div>
+        </section>
 
-        <!-- BARRA DE ACCIONES -->
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <!-- FILTROS Y BÚSQUEDA -->
+        <section class="bg-[#131b2e] border border-gray-800 p-4 rounded-xl flex flex-col md:flex-row md:items-center gap-4">
             <div class="relative flex-1">
-                <input type="text" id="buscador" placeholder="🔎 Buscar municipio (ej. Tenango)..." class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                <input type="text" id="buscador" placeholder="Buscar municipio, estado..." class="w-full pl-10 pr-4 py-2.5 bg-[#0b0f19] border border-gray-800 rounded-lg text-sm text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
             </div>
             <div class="flex gap-3">
-                <button onclick="ejecutarMonitoreoClima()" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
-                    🔄 Sincronizar Clima
-                </button>
-                <button onclick="abrirModal()" class="bg-slate-800 hover:bg-slate-900 text-white font-semibold px-4 py-2 rounded-lg shadow transition flex items-center gap-2">
-                    ➕ Registrar Usuario
-                </button>
+                <select id="filtro-estado" class="px-3 py-2.5 bg-[#0b0f19] border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                    <option value="">Todos los estados</option>
+                    <option value="Hgo.">Hidalgo</option>
+                    <option value="Pue.">Puebla</option>
+                    <option value="Ver.">Veracruz</option>
+                </select>
+                <select id="filtro-nivel" class="px-3 py-2.5 bg-[#0b0f19] border border-gray-800 rounded-lg text-sm text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                    <option value="">Todos los niveles</option>
+                    <option value="Peligro">Peligro / Alerta</option>
+                    <option value="Precaución">Precaución</option>
+                    <option value="Estable">Sin riesgo</option>
+                </select>
             </div>
-        </div>
+        </section>
 
-        <!-- TABLA DE MUNICIPIOS Y PRONÓSTICOS -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead class="bg-gray-50 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase">
-                        <tr>
-                            <th class="p-4 w-[20%]">Municipio / Estado</th>
-                            <th class="p-4 w-[35%]">Resumen de Alerta / Interpretación Sencilla</th>
-                            <th class="p-4 text-center w-[22%]">Perspectiva Lluvia (Pronóstico 5 Días)</th>
-                            <th class="p-4 text-center w-[23%]">Perspectiva Temperatura (Pronóstico 5 Días)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tabla-cuerpo" class="divide-y divide-gray-100 text-sm">
-                        <!-- Las filas se cargarán automáticamente aquí -->
-                    </tbody>
-                </table>
-            </div>
+        <!-- SECCIÓN DE CONTENIDO DIVIDIDO (TABLA + ANALÍTICA) -->
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            
+            <!-- TABLA CENTRAL -->
+            <section class="xl:col-span-2 bg-[#131b2e] border border-gray-800 rounded-2xl overflow-hidden shadow-sm">
+                <div class="p-5 border-b border-gray-800 flex justify-between items-center">
+                    <h3 class="font-bold text-white text-lg">Pronóstico por Municipio</h3>
+                    <span id="tabla-contador" class="text-xs text-gray-400 font-semibold">0 municipios</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead class="bg-[#1e293b]/50 border-b border-gray-800 text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                            <tr>
+                                <th class="p-4 w-[25%]">Municipio</th>
+                                <th class="p-4 w-[35%]">Alerta / Interpretación</th>
+                                <th class="p-4 text-center w-[20%]">Lluvia (5D)</th>
+                                <th class="p-4 text-center w-[20%]">Temperatura (5D)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-cuerpo" class="divide-y divide-gray-800 text-sm">
+                            <!-- Las filas se cargarán aquí -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- BARRA LATERAL DE ANALÍTICAS -->
+            <section class="space-y-6">
+                
+                <!-- TARJETA: DISTRIBUCIÓN DE RIESGOS -->
+                <div class="bg-[#131b2e] border border-gray-800 p-6 rounded-2xl shadow-sm space-y-4">
+                    <h3 class="font-bold text-white text-md">Distribución de Riesgo</h3>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between text-gray-400 mb-1 font-semibold">
+                                <span>Sin riesgo</span> <span id="dist-estable-pct" class="text-green-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                <div id="dist-estable-bar" class="bg-green-500 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-gray-400 mb-1 font-semibold">
+                                <span>Precaución</span> <span id="dist-prev-pct" class="text-yellow-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                <div id="dist-prev-bar" class="bg-yellow-500 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-gray-400 mb-1 font-semibold">
+                                <span>Alerta</span> <span id="dist-alerta-pct" class="text-orange-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                <div id="dist-alerta-bar" class="bg-orange-500 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="flex justify-between text-gray-400 mb-1 font-semibold">
+                                <span>Peligro</span> <span id="dist-peligro-pct" class="text-red-400">0%</span>
+                            </div>
+                            <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
+                                <div id="dist-peligro-bar" class="bg-red-500 h-full transition-all duration-500" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TARJETA: ÚLTIMAS ALERTAS ENVIADAS -->
+                <div class="bg-[#131b2e] border border-gray-800 p-6 rounded-2xl shadow-sm space-y-4">
+                    <h3 class="font-bold text-white text-md">Alertas Recientes</h3>
+                    <div id="alertas-recientes-log" class="space-y-3">
+                        <!-- Las alertas recientes se cargarán aquí -->
+                    </div>
+                </div>
+
+            </section>
+
         </div>
 
     </main>
 
+    <!-- 3. BARRA DE NAVEGACIÓN MÓVIL (VISTA MÓVIL) -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#111827] border-t border-gray-800 flex justify-around p-3 z-40 text-xs">
+        <a href="#" class="flex flex-col items-center space-y-1 text-blue-400 font-semibold">
+            <span>📊</span> <span>Dashboard</span>
+        </a>
+        <a href="#" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-white">
+            <span>🗺️</span> <span>Municipios</span>
+        </a>
+        <a href="#" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-white">
+            <span>🔔</span> <span>Alertas</span>
+        </a>
+        <a href="#" class="flex flex-col items-center space-y-1 text-gray-400 hover:text-white">
+            <span>👥</span> <span>Usuarios</span>
+        </a>
+    </nav>
+
     <!-- MODAL DE REGISTRO DE USUARIOS -->
-    <div id="modal-registro" class="fixed inset-0 bg-slate-900/50 hidden flex items-center justify-center p-4 backdrop-blur-sm z-50">
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 border border-gray-100">
+    <div id="modal-registro" class="fixed inset-0 bg-[#0b0f19]/70 hidden flex items-center justify-center p-4 backdrop-blur-sm z-50">
+        <div class="bg-[#131b2e] rounded-2xl shadow-2xl w-full max-w-md p-6 border border-gray-800">
             <div class="flex justify-between items-center mb-6">
-                <h3 class="text-lg font-bold text-gray-800">Registrar Nuevo Beneficiario</h3>
-                <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                <h3 class="text-lg font-bold text-white">Registrar Nuevo Beneficiario</h3>
+                <button onclick="cerrarModal()" class="text-gray-400 hover:text-gray-200 text-2xl">&times;</button>
             </div>
             <form onsubmit="registrarUsuario(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Celular de Pruebas (Formato +52)</label>
-                    <input type="text" id="reg-telefono" placeholder="+525512345678" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Celular de Pruebas (Formato +52)</label>
+                    <input type="text" id="reg-telefono" placeholder="+525512345678" required class="w-full px-3 py-2 bg-[#0b0f19] border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Código Postal</label>
-                    <input type="text" id="reg-cp" placeholder="42130" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Código Postal</label>
+                    <input type="text" id="reg-cp" placeholder="42130" required class="w-full px-3 py-2 bg-[#0b0f19] border border-gray-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Municipio de Residencia</label>
-                    <select id="reg-municipio" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500">
+                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Municipio de Residencia</label>
+                    <select id="reg-municipio" required class="w-full px-3 py-2 bg-[#0b0f19] border border-gray-800 rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/50">
                         <option value="">Seleccione un municipio...</option>
-                        <!-- Se poblará dinámicamente -->
                     </select>
                 </div>
                 <div class="flex justify-end gap-3 pt-4">
-                    <button type="button" onclick="cerrarModal()" class="px-4 py-2 text-sm font-semibold text-gray-500 hover:bg-gray-100 rounded-lg">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-slate-800 hover:bg-slate-900 rounded-lg shadow">Guardar</button>
+                    <button type="button" onclick="cerrarModal()" class="px-4 py-2 text-sm font-semibold text-gray-400 hover:bg-gray-800 rounded-lg">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow">Guardar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- CÓDIGO DE CONEXIÓN CON SUPABASE -->
+    <!-- SCRIPT DE CONEXIÓN A SUPABASE -->
     <script>
         // CONFIGURACIÓN DE CONEXIÓN
         const supabaseUrl = 'https://mkydiuqermwusndsibqg.supabase.co';
@@ -125,11 +271,8 @@
         const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
         let municipios_locales = [];
-
-        // Municipios cálidos de la Sierra/Huasteca (Límites de calor elevados)
         const municipiosCalidos = ['13027', '13053', '13060', '21213', '21197', '21091', '21071', '21175', '21100', '21049', '21184', '21181', '21109'];
 
-        // Genera el nombre de los 5 días en español
         function obtenerNombresDias() {
             const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
             const hoy = new Date();
@@ -144,9 +287,9 @@
             return nombres;
         }
 
-        // Función para cargar los datos del panel al iniciar
         async function cargarPanel() {
             try {
+                // 1. Obtener Municipios
                 const { data: municipios, error: errM } = await _supabase
                     .from('municipios_riesgo')
                     .select('*')
@@ -155,30 +298,48 @@
                 if (errM) throw errM;
                 municipios_locales = municipios;
 
+                // 2. Obtener total de usuarios
                 const { count: usuariosCount, error: errU } = await _supabase
                     .from('usuarios')
                     .select('*', { count: 'exact', head: true });
 
+                // 3. Obtener total de alertas registradas
                 const { count: alertasCount, error: errA } = await _supabase
                     .from('cola_sms')
                     .select('*', { count: 'exact', head: true });
 
+                // 4. Obtener las últimas alertas de la cola
+                const { data: alertasRecientes, error: errAR } = await _supabase
+                    .from('cola_sms')
+                    .select('*')
+                    .order('creado_el', { ascending: false })
+                    .limit(3);
+
+                // Pintamos las métricas
                 document.getElementById('total-municipios').innerText = municipios.length;
                 document.getElementById('total-usuarios').innerText = usuariosCount || 0;
                 document.getElementById('total-alertas').innerText = alertasCount || 0;
+                document.getElementById('sys-sms').innerText = `${alertasCount || 0} pendientes`;
+                
+                // Actualizar hora de sincronización
+                const ahora = new Date();
+                document.getElementById('sys-sync').innerText = ahora.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+                // Renderizamos
                 dibujarTabla(municipios);
                 poblarSelectMunicipios(municipios);
+                dibujarDistribucionRiesgo(municipios);
+                dibujarAlertasRecientes(alertasRecientes);
 
             } catch (err) {
                 alert("Error al conectar con la Base de Datos: " + err.message);
             }
         }
 
-        // ANALISTA INTELIGENTE: ÁRBOL DE DECISIÓN DE 3 NIVELES (CDMX/SMN)
+        // PARSER DEL ÁRBOL DE DECISIÓN PARA GENERAR RESUMEN DE ALERTA
         function generarResumenAlerta(item) {
             if (!item.outlook_lluvia_5d || item.outlook_lluvia_5d.includes('Esperando')) {
-                return '<span class="text-gray-400 italic text-xs">Esperando sincronización de clima...</span>';
+                return '<span class="text-gray-500 italic text-xs">Esperando lectura de clima...</span>';
             }
 
             const nombresDias = obtenerNombresDias();
@@ -199,71 +360,79 @@
             });
 
             let alertas = [];
+            let maximaAlerta = 'Estable';
 
-            // Evaluamos día por día bajo el árbol de decisión
             for (let i = 0; i < 5; i++) {
                 const ll = lluvias[i];
                 const t = temps[i];
-                
-                // Límites de calor según región
                 const limiteCalorAmarillo = esCalido ? 34.0 : 28.0;
                 const limiteCalorNaranja = esCalido ? 37.0 : 31.0;
 
-                // NIVEL 1 DEL ÁRBOL: PRIORIDAD LLUVIA SEVERA (>= 50mm) -> Bloquea advertencias de calor
+                // Nivel 1: Lluvia Severa
                 if (ll.val >= 50.0) {
+                    maximaAlerta = 'Peligro';
                     if (ll.val >= 150.0) {
-                        alertas.push(`🚨 <span class="font-bold text-red-600">${ll.dia}</span>: ¡PELIGRO EXTREMO DE TORMENTA! (${ll.val}mm). Riesgo alto de inundación grave y deslaves.`);
+                        alertas.push(`🚨 <span class="font-bold text-red-500">${ll.dia}</span>: ¡TORMENTA TORRENCIAL! (${ll.val}mm). Alto peligro de desborde y deslaves.`);
                     } else {
-                        alertas.push(`⚠️ <span class="font-bold text-orange-600">${ll.dia}</span>: ¡LLUVIA MUY FUERTE! (${ll.val}mm). Peligro de deslave y caída de tierra en cerros.`);
+                        alertas.push(`⚠️ <span class="font-bold text-orange-400">${ll.dia}</span>: ¡LLUVIA MUY FUERTE! (${ll.val}mm). Riesgo de desgajamiento de lomas.`);
                     }
                 }
-                // NIVEL 2 DEL ÁRBOL: FUSIÓN DE COEXISTENCIA ("BOCHORNO") (Lluvia 25-50mm Y Calor alto)
+                // Nivel 2: Fusión Bochorno
                 else if (ll.val >= 25.1 && t.tmax >= limiteCalorAmarillo) {
-                    alertas.push(`⚠️ <span class="font-bold text-yellow-600">${ll.dia}</span>: Ambiente muy sofocante (bochorno de ${t.tmax}°C) con lluvia fuerte (${ll.val}mm). Camine con cuidado.`);
+                    if (maximaAlerta !== 'Peligro') maximaAlerta = 'Precaución';
+                    alertas.push(`⚠️ <span class="font-bold text-yellow-400">${ll.dia}</span>: Clima muy húmedo y sofocante (bochorno de ${t.tmax}°C) con lluvias fuertes (${ll.val}mm).`);
                 }
-                // NIVEL 3 DEL ÁRBOL: EVALUACIÓN INDEPENDIENTE
+                // Nivel 3: Evaluaciones Independientes
                 else {
-                    // Lluvia Fuerte sola
                     if (ll.val >= 25.1) {
-                        alertas.push(`⚠️ <span class="font-bold text-yellow-600">${ll.dia}</span>: Habrá mucha agua en las calles (${ll.val}mm). No cruce arroyos ni calles inundadas.`);
+                        if (maximaAlerta !== 'Peligro') maximaAlerta = 'Precaución';
+                        alertas.push(`⚠️ <span class="font-bold text-yellow-400">${ll.dia}</span>: Lluvia fuerte de ${ll.val}mm. No intente cruzar arroyos ni calles inundadas.`);
                     }
                     
-                    // Calor solo
                     if (t.tmax >= limiteCalorAmarillo) {
-                        if (t.tmax >= (esCalido ? 40.0 : 34.0)) {
-                            alertas.push(`🔥 <span class="font-bold text-red-600">${t.dia}</span>: HARÁ MUCHÍSIMO CALOR (${t.tmax}°C). Tome mucha agua y no se asolee.`);
+                        const esRojo = t.tmax >= (esCalido ? 40.0 : 34.0);
+                        if (esRojo) maximaAlerta = 'Peligro';
+                        else if (maximaAlerta !== 'Peligro') maximaAlerta = 'Precaución';
+
+                        if (esRojo) {
+                            alertas.push(`🔥 <span class="font-bold text-red-500">${t.dia}</span>: ¡CALOR EXTREMO! (${t.tmax}°C). No se asolee.`);
                         } else if (t.tmax >= limiteCalorNaranja) {
-                            alertas.push(`🔥 <span class="font-bold text-orange-600">${t.dia}</span>: Tarde con mucho calor (${t.tmax}°C). Protéjase del sol.`);
+                            alertas.push(`🔥 <span class="font-bold text-orange-400">${t.dia}</span>: Tarde muy calurosa (${t.tmax}°C).`);
                         } else {
-                            alertas.push(`🔥 <span class="font-bold text-yellow-600">${t.dia}</span>: Tarde muy calurosa (${t.tmax}°C). Recuerde tomar agua.`);
+                            alertas.push(`🔥 <span class="font-bold text-yellow-400">${t.dia}</span>: Tarde calurosa de ${t.tmax}°C.`);
                         }
                     }
 
-                    // Frío solo
                     if (t.tmin <= 6.0) {
                         if (t.tmin <= -3.0) {
-                            alertas.push(`❄️ <span class="font-bold text-purple-600">${t.dia}</span>: HELADA MUY PELIGROSA (${t.tmin}°C).`);
+                            maximaAlerta = 'Peligro';
+                            alertas.push(`❄️ <span class="font-bold text-purple-400">${t.dia}</span>: ¡HELADA MUY PELIGROSA! (${t.tmin}°C).`);
                         } else if (t.tmin <= 0.0) {
-                            alertas.push(`❄️ <span class="font-bold text-red-600">${t.dia}</span>: Helada severa (${t.tmin}°C). Protéjase bien.`);
+                            maximaAlerta = 'Peligro';
+                            alertas.push(`❄️ <span class="font-bold text-red-500">${t.dia}</span>: Helada severa (${t.tmin}°C).`);
                         } else if (t.tmin <= 3.0) {
-                            alertas.push(`❄️ <span class="font-bold text-orange-600">${t.dia}</span>: Hará muchísimo frío (${t.tmin}°C). Póngase ropa gruesa.`);
+                            if (maximaAlerta !== 'Peligro') maximaAlerta = 'Precaución';
+                            alertas.push(`❄️ <span class="font-bold text-orange-400">${t.dia}</span>: Frío extremo de ${t.tmin}°C.`);
                         } else {
-                            alertas.push(`❄️ <span class="font-bold text-yellow-600">${t.dia}</span>: Frío de precaución (${t.tmin}°C). Abríguese.`);
+                            alertas.push(`❄️ <span class="font-bold text-yellow-400">${t.dia}</span>: Mucho frío de ${t.tmin}°C.`);
                         }
                     }
                 }
             }
 
+            // Guardamos el nivel de alerta calculado para usarlo en las estadísticas
+            item.nivel_alerta_calculado = maximaAlerta;
+
             if (alertas.length === 0) {
-                return '<span class="text-green-600 font-semibold flex items-center gap-1">✅ Pronóstico estable y seguro. Sin riesgos para los próximos 5 días.</span>';
+                return '<span class="text-green-500 font-semibold flex items-center gap-1">✅ Pronóstico templado y seguro. Sin riesgos.</span>';
             }
 
-            return `<div class="space-y-1 text-xs text-left">${alertas.map(a => `<div class="border-l-2 border-slate-300 pl-2 py-0.5">${a}</div>`).join('')}</div>`;
+            return `<div class="space-y-1 text-xs text-left">${alertas.map(a => `<div class="border-l-2 border-slate-700 pl-2 py-0.5">${a}</div>`).join('')}</div>`;
         }
 
-        // PARSER DE LLUVIA CON SEMÁFORO HOMOLOGADO AL SMN
+        // RENDER DE SEMÁFORO DE LLUVIA
         function generarSemaforoLluvia(str) {
-            if (!str || str.includes('Esperando')) return '<span class="text-gray-400 italic text-xs">Esperando lectura...</span>';
+            if (!str || str.includes('Esperando')) return '<span class="text-gray-500 italic text-xs">Esperando...</span>';
             
             const dias = str.split(', ');
             const nombresDias = obtenerNombresDias();
@@ -274,20 +443,20 @@
                 const diaEtiqueta = nombresDias[idx] || partes[0];
                 const valorLluvia = parseFloat(partes[1]);
                 
-                let colorClase = 'bg-green-100 text-green-800 border-green-300'; // Lluvia Ligera (0 - 25mm)
+                let colorClase = 'bg-green-500/10 text-green-400 border-green-500/20'; // Lluvia Ligera (0 - 25mm)
                 
                 if (valorLluvia >= 150.1) {
-                    colorClase = 'bg-red-500 text-white border-red-600 animate-pulse'; // Lluvia muy intensa (Severa/Torrencial)
+                    colorClase = 'bg-red-600 text-white border-red-700 animate-pulse'; // Lluvia torrencial
                 } else if (valorLluvia >= 50.1) {
-                    colorClase = 'bg-orange-100 text-orange-800 border-orange-300 font-bold'; // Lluvia Intensa (Alerta)
+                    colorClase = 'bg-orange-500/20 text-orange-400 border-orange-500/30 font-bold'; // Lluvia Intensa
                 } else if (valorLluvia >= 25.1) {
-                    colorClase = 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Lluvia Fuerte (Precaución)
+                    colorClase = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'; // Lluvia Fuerte
                 }
 
                 html += `
-                    <div class="flex flex-col items-center border rounded px-1.5 py-1 ${colorClase} text-[10px] font-bold min-w-[58px] shadow-sm">
+                    <div class="flex flex-col items-center border rounded-lg px-1 py-1 ${colorClase} text-[9px] font-bold min-w-[55px] shadow-sm">
                         <span>${diaEtiqueta}</span>
-                        <span class="text-[11px] mt-0.5">${valorLluvia}mm</span>
+                        <span class="text-[10px] mt-0.5">${valorLluvia}mm</span>
                     </div>
                 `;
             });
@@ -295,9 +464,9 @@
             return html;
         }
 
-        // PARSER DE TEMPERATURA CON SEMÁFORO HOMOLOGADO REGIONALIZADO
+        // RENDER DE SEMÁFORO DE TEMPERATURA
         function generarSemaforoTemperatura(str, claveInegi) {
-            if (!str || str.includes('Esperando')) return '<span class="text-gray-400 italic text-xs">Esperando lectura...</span>';
+            if (!str || str.includes('Esperando')) return '<span class="text-gray-500 italic text-xs">Esperando...</span>';
             
             const dias = str.split(', ');
             const nombresDias = obtenerNombresDias();
@@ -312,37 +481,36 @@
                 const tmin = parseFloat(temps[0]);
                 const tmax = parseFloat(temps[1]);
                 
-                let colorClase = 'bg-gray-50 text-gray-600 border-gray-200'; // Templado Seguro
+                let colorClase = 'bg-gray-800/50 text-gray-400 border-gray-700/50'; // Templado Seguro
                 
-                // Límites de calor según región
                 const limiteCalorAmarillo = esCalido ? 34.0 : 28.0;
                 const limiteCalorNaranja = esCalido ? 37.0 : 31.0;
                 const limiteCalorRojo = esCalido ? 40.0 : 34.0;
 
-                // 1. Evaluación de Frío (Gaceta Oficial)
+                // 1. Evaluación de Frío
                 if (tmin <= -3.0) {
-                    colorClase = 'bg-purple-600 text-white border-purple-700 animate-pulse'; // Púrpura: Menor a -3°C
+                    colorClase = 'bg-purple-600 text-white border-purple-700 animate-pulse'; // Púrpura
                 } else if (tmin <= 0.0) {
-                    colorClase = 'bg-red-500 text-white border-red-600'; // Roja: -1°C a 0°C
+                    colorClase = 'bg-red-500 text-white border-red-600'; // Roja
                 } else if (tmin <= 3.0) {
-                    colorClase = 'bg-orange-100 text-orange-800 border-orange-300'; // Naranja: 1°C a 3°C
+                    colorClase = 'bg-orange-500/20 text-orange-400 border-orange-500/30'; // Naranja
                 } else if (tmin <= 6.0) {
-                    colorClase = 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Amarilla: 4°C a 6°C
+                    colorClase = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'; // Amarilla
                 }
                 
-                // 2. Evaluación de Calor Regionalizado
+                // 2. Evaluación de Calor
                 if (tmax >= limiteCalorRojo) {
-                    colorClase = 'bg-red-500 text-white border-red-600 animate-pulse'; // Roja (Muy Alto)
+                    colorClase = 'bg-red-500 text-white border-red-600 animate-pulse'; // Roja
                 } else if (tmax >= limiteCalorNaranja && colorClase.includes('gray')) {
-                    colorClase = 'bg-orange-100 text-orange-800 border-orange-300'; // Naranja (Alto)
+                    colorClase = 'bg-orange-500/20 text-orange-400 border-orange-500/30'; // Naranja
                 } else if (tmax >= limiteCalorAmarillo && colorClase.includes('gray')) {
-                    colorClase = 'bg-yellow-100 text-yellow-800 border-yellow-300'; // Amarilla (Moderado)
+                    colorClase = 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'; // Amarilla
                 }
 
                 html += `
-                    <div class="flex flex-col items-center border rounded px-1.5 py-1 ${colorClase} text-[10px] font-bold min-w-[68px] shadow-sm">
+                    <div class="flex flex-col items-center border rounded-lg px-1 py-1 ${colorClase} text-[9px] font-bold min-w-[62px] shadow-sm">
                         <span>${diaEtiqueta}</span>
-                        <span class="text-[11px] mt-0.5">${tmin}/${tmax}°C</span>
+                        <span class="text-[10px] mt-0.5">${tmin}/${tmax}°C</span>
                     </div>
                 `;
             });
@@ -350,21 +518,99 @@
             return html;
         }
 
+        // CALCULO DINÁMICO DE DISTRIBUCIÓN DE RIESGOS (Las barras de progreso de la derecha)
+        function dibujarDistribucionRiesgo(lista) {
+            let total = lista.length;
+            let estables = 0;
+            let precaucion = 0;
+            let peligro = 0;
+
+            lista.forEach(item => {
+                const lvl = item.nivel_alerta_calculado || 'Estable';
+                if (lvl === 'Peligro') peligro++;
+                else if (lvl === 'Precaución') precaucion++;
+                else estables++;
+            });
+
+            // Calculamos porcentajes
+            const pctEstable = Math.round((estables / total) * 100);
+            const pctPrev = Math.round((precaucion / total) * 100);
+            const pctPeligro = Math.round((peligro / total) * 100);
+
+            // Pintamos en pantalla
+            document.getElementById('dist-estable-pct').innerText = `${pctEstable}%`;
+            document.getElementById('dist-estable-bar').style.width = `${pctEstable}%`;
+
+            document.getElementById('dist-prev-pct').innerText = `${pctPrev}%`;
+            document.getElementById('dist-prev-bar').style.width = `${pctPrev}%`;
+
+            document.getElementById('dist-peligro-pct').innerText = `${pctPeligro}%`;
+            document.getElementById('dist-peligro-bar').style.width = `${pctPeligro}%`;
+
+            // Actualizamos la métrica general de "Riesgo Actual" del sistema
+            const riesgoIndexCard = document.getElementById('riesgo-actual-index');
+            const riesgoIcono = document.getElementById('riesgo-icono');
+            if (peligro > 0) {
+                riesgoIndexCard.innerText = "ALTO / PELIGRO";
+                riesgoIndexCard.className = "text-2xl font-black text-red-500 mt-1";
+                riesgoIcono.className = "text-3xl bg-red-500/10 p-3 rounded-xl text-red-500 animate-pulse";
+            } else if (precaucion > 0) {
+                riesgoIndexCard.innerText = "MODERADO";
+                riesgoIndexCard.className = "text-2xl font-black text-yellow-400 mt-1";
+                riesgoIcono.className = "text-3xl bg-yellow-500/10 p-3 rounded-xl text-yellow-400";
+            } else {
+                riesgoIndexCard.innerText = "BAJO / SEGURO";
+                riesgoIndexCard.className = "text-2xl font-black text-green-400 mt-1";
+                riesgoIcono.className = "text-3xl bg-green-500/10 p-3 rounded-xl text-green-400";
+            }
+        }
+
+        // DIBUJAR ALERTAS RECIENTES (LOG)
+        function dibujarAlertasRecientes(lista) {
+            const container = document.getElementById('alertas-recientes-log');
+            container.innerHTML = '';
+
+            if(!lista || lista.length === 0) {
+                container.innerHTML = '<p class="text-xs text-gray-500 italic text-center py-4">Esperando envío de alertas...</p>';
+                return;
+            }
+
+            lista.forEach(item => {
+                const date = new Date(item.creado_el);
+                const hora = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                const div = document.createElement('div');
+                div.className = "p-3 bg-[#0b0f19] border border-gray-800 rounded-xl text-xs space-y-1";
+                div.innerHTML = `
+                    <div class="flex justify-between font-bold text-gray-400">
+                        <span>A: ${item.telefono}</span>
+                        <span class="text-[10px] text-gray-500">${hora}</span>
+                    </div>
+                    <p class="text-gray-300 leading-relaxed">${item.mensaje}</p>
+                `;
+                container.appendChild(div);
+            });
+        }
+
         // Función para dibujar la tabla de municipios
         function dibujarTabla(lista) {
             const tbody = document.getElementById('tabla-cuerpo');
             tbody.innerHTML = '';
+            document.getElementById('tabla-contador').innerText = `${lista.length} municipios`;
 
             lista.forEach(item => {
+                // Primero corremos el parser para calcular el nivel de alerta dinámico
+                const resumenAlertaText = generarResumenAlerta(item);
+
                 const tr = document.createElement('tr');
-                tr.className = "hover:bg-gray-50 transition border-b border-gray-100";
+                tr.className = "hover:bg-gray-800/20 transition border-b border-gray-800";
 
                 tr.innerHTML = `
                     <td class="p-4">
-                        <div class="font-bold text-gray-800">${item.municipio}</div>
-                        <div class="text-xs text-gray-400 font-semibold">${item.estado}</div>
+                        <div class="font-bold text-white">${item.municipio}</div>
+                        <div class="text-[10px] text-gray-500 font-bold uppercase mt-0.5">${item.estado}</div>
                     </td>
-                    <td class="p-4">${generarResumenAlerta(item)}</td>
+                    <td class="p-4 text-gray-300 leading-normal">${resumenAlertaText}</td>
                     <td class="p-4 text-center">${generarSemaforoLluvia(item.outlook_lluvia_5d)}</td>
                     <td class="p-4 text-center">${generarSemaforoTemperatura(item.outlook_temp_5d, item.clave_inegi)}</td>
                 `;
@@ -385,14 +631,29 @@
         }
 
         // Buscador reactivo
-        document.getElementById('buscador').addEventListener('input', (e) => {
-            const termino = e.target.value.toLowerCase();
-            const filtrados = municipios_locales.filter(item => 
-                item.municipio.toLowerCase().includes(termino) || 
-                item.estado.toLowerCase().includes(termino)
-            );
+        function filtrarTabla() {
+            const termino = document.getElementById('buscador').value.toLowerCase();
+            const estado = document.getElementById('filtro-estado').value;
+            const nivel = document.getElementById('filtro-nivel').value;
+
+            const filtrados = municipios_locales.filter(item => {
+                const coincideNombre = item.municipio.toLowerCase().includes(termino) || item.estado.toLowerCase().includes(termino);
+                const coincideEstado = estado ? item.estado === estado : true;
+                
+                let coincideNivel = true;
+                if (nivel === 'Peligro') coincideNivel = item.nivel_alerta_calculado === 'Peligro';
+                else if (nivel === 'Precaución') coincideNivel = item.nivel_alerta_calculado === 'Precaución';
+                else if (nivel === 'Estable') coincideNivel = item.nivel_alerta_calculado === 'Estable';
+
+                return coincideNombre && coincideEstado && coincideNivel;
+            });
+
             dibujarTabla(filtrados);
-        });
+        }
+
+        document.getElementById('buscador').addEventListener('input', filtrarTabla);
+        document.getElementById('filtro-estado').addEventListener('change', filtrarTabla);
+        document.getElementById('filtro-nivel').addEventListener('change', filtrarTabla);
 
         // Forzar la consulta del Clima mediante botón
         async function ejecutarMonitoreoClima() {
@@ -436,11 +697,9 @@
             }
         }
 
-        // Lógica de apertura/cierre de modal
         function abrirModal() { document.getElementById('modal-registro').classList.remove('hidden'); }
         function cerrarModal() { document.getElementById('modal-registro').classList.add('hidden'); }
 
-        // Inicializar el panel al cargar la página
         window.onload = cargarPanel;
     </script>
 </body>
